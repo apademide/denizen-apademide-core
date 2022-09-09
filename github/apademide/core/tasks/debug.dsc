@@ -15,10 +15,10 @@ apa_core_debug:
   # Script block that runs to output informations when APADEMIDE CORE is initialized
   innit:
   # Get internal data from the internal flag
-  - define DATA <server.flag[APA_CORE_FLAG]>
+  - define DATA <server.flag[_APA_CORE_FLAG]>
   - define ROOT <[DATA].get[ROOT]>
   # Hide confirmation from console if config says so
-  - if !<[DATA].get[CONFIG].data_key[console.succeed_humbly]>:
+  - if !<[DATA].deep_get[config.console.succeed_humbly]>:
     - define PREFIX <script.parsed_key[data.ok_prefix]>
     - debug APPROVAL "APADEMIDE CORE is now activated."
     - debug LOG "<[PREFIX]> Enabled at: <[DATA].get[INNIT].format>"
@@ -29,7 +29,11 @@ apa_core_debug:
   - if !<server.has_flag[<[ROOT]>]>:
     - debug LOG "<script.parsed_key[data.warning_prefix]> No data has been found at server flag '<[ROOT]>'. If you're initializing APADEMIDE CORE for the first time or you intentionnaly editted/deleted that flag, ignore this message."
 
+  no_apa:
+  - debug ERROR "You can't use '<[MESSAGE]>'. APADEMIDE CORE isn't enabled. Check console for possible errors?"
 
   # Informs the user that APADEMIDE CORE failed to innit for some reason
   fatal:
   - debug ERROR "<script.parsed_key[data.error_prefix]> <[MESSAGE]> APADEMIDE CORE and MODULES are now disabled"
+  error:
+  - debug ERROR "<script.parsed_key[data.error_prefix]> <[MESSAGE]>"
