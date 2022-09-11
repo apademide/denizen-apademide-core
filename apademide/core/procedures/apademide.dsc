@@ -31,6 +31,7 @@ apademide:
   # If the proc has required data, validates it or errors
   - define INPUT_DATA <[PROC].get[input_data].if_null[NULL]>
   - if <[INPUT_DATA]> != NULL:
+    # Validates all inputs thanks to the validator proc
     - define RESULTS <proc[apa_core_proc_input_validator].context[<list_single[<[DATA]>].include_single[<[INPUT_DATA]>]>]>
     - if !<[RESULTS.OK].is_truthy>:
       - run apa_core_debug "context:ERROR|Error in procedure '<[INPUT_PROC]>': <[RESULTS.MESSAGE]>"
@@ -39,6 +40,7 @@ apademide:
 
   - inject <script> path:subprocedures.<[INPUT_PROC]>.script
 
+  # Quicks helpers to inject in the subprocs to achieve various goals or get various data
   subtasks:
     helpers:
       use_data:
@@ -140,7 +142,10 @@ apademide:
           - determine <[DATA.STRING].substring[0,<[DATA.LENGTH].sub[1]>]><[DATA.CHAR].if_null[…]>
       # Returns the input value as a "safe" element
       # i.e, French word Île (Island) becomes ILE, Garçon (Boy) becomes GARCON, Saint-André becomes SAINT_ANDRE)
-      safe: do
+      safe:
+        input_data:
+          CAPITALIZE:
+            type: boolean
 
 
     # # TASKS  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #          TASKS
