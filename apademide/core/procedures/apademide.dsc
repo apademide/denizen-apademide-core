@@ -23,20 +23,15 @@ apademide:
 
   # Determines the status of transfered data
   - define DATA <[INPUT_DATA].if_null[NULL]>
-  - if <[DATA]> == NULL:
-    - define HAS_DATA false
-  - else:
-    - define HAS_DATA true
-    # Tries to parse the input as a map to handle string-input maps
+
+  # Tries to parse the input as a map to handle string-input maps
+  - if <[DATA]> != NULL:
     - define DATA <map[<[DATA]>].if_null[<[DATA]>]>
 
   # If the proc has required data, validates it or errors
-  - define REQUIRED_DATA <[PROC].get[required_data].if_null[NULL]>
-  - if <[REQUIRED_DATA]> != NULL:
-    - if !<[HAS_DATA]>:
-      - run apa_core_debug "context:ERROR|Error in procedure '<[INPUT_PROC]>': No data has been inputted. (Required keys: <[REQUIRED_DATA].parse_value_tag[<&lt><[PARSE_VALUE].before[|]><&gt>].to_list[: ].comma_separated>)"
-      - determine NULL
-    - define RESULTS <proc[apa_core_proc_input_validator].context[<list_single[<[DATA]>].include_single[<[REQUIRED_DATA]>]>]>
+  - define INPUT_DATA <[PROC].get[input_data].if_null[NULL]>
+  - if <[INPUT_DATA]> != NULL:
+    - define RESULTS <proc[apa_core_proc_input_validator].context[<list_single[<[DATA]>].include_single[<[INPUT_DATA]>]>]>
     - if !<[RESULTS.OK].is_truthy>:
       - run apa_core_debug "context:ERROR|Error in procedure '<[INPUT_PROC]>': <[RESULTS.MESSAGE]>"
       - determine NULL
@@ -46,10 +41,8 @@ apademide:
 
   subtasks:
     helpers:
-      requires_data:
-        - if !<[HAS_DATA]>:
-          - run apa_core_debug "context:ERROR|Some context input is required to use procedure '<[INPUT_PROC]>'. (<&lt>proc[APADEMIDE].context[<[INPUT_PROC]>|<red>{<[REQUIRED_DATA_TYPE].if_null[missing data here]>}<white>]<&gt>)"
-          - determine NULL
+      use_data:
+      - define PROC_DATA <script[apa_core_procedures_data]>
 
 
   subprocedures:
@@ -72,6 +65,43 @@ apademide:
     permissions_root:
       script:
         - determine <proc[APADEMIDE].context[config].deep_get[commands.permissions.root]>
+
+    # As the name implies, it's a helper subprocedure.
+    # You can use <proc[apademide].context[help]>
+    # with or without additionnal context (consisting of PATH:A.FULL.OR.PARTIAL.PATH.TO.A.SUBPROC)
+    # to know what proc exists, and how to use it
+    help:
+      input_data:
+        PATH:
+          type: path
+          null: true
+      script:
+        # Get this script's SUBPROCEDURES key (as in, the map of all procedures available)
+        - define MAP <script.data_key[SUBPROCEDURES]>
+
+        # If there is no path input, returns all the root procs
+        - if !<[PATH].exists>:
+          - determine "Available APADEMIDE CORE procedures and procedure categories are: <[MAP].keys.formatted>."
+
+        # If the path is set, get the procedure at its position or NULL
+        - define MAP <[MAP].deep_get[<[PATH]>].if_null[NULL]>
+
+        # If the path returns null, stops there with an error message.
+        - if <[MAP]> == NULL:
+          - determine "There is no APADEMIDE CORE's procedure named '<[PATH]>'. Use the HELP procedure without context to get all root procedures."
+
+        # If the path ends with on the the defined value, it means it conducts directly "inside a proc"
+        # So the path is set back to one step baackward
+        - if <list[script|input_data|help].contains[<[PATH].after_last[.]>]>:
+          - define PATH <[PATH].before_last[.]>
+
+        # If we can get the script key inside the path, it means it's a procedure already
+        - if <[MAP].get[script].exists>:
+          - determine "APADEMIDE CORE's procedure named '<[PATH]>' serves to: <[MAP].get[HELP].if_null[Unknown :( But it exists]>."
+        # … and if we can't get the script key, by deduction it's a "category" of procs
+        - determine "APADEMIDE CORE's category of procedures '<[PATH]>' contains: <[MAP].keys.formatted>."
+
+
     # Returns a cuboidtag centered at the given location with the given size
 
     # # LOCATIONS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           LOCATIONS
@@ -84,9 +114,11 @@ apademide:
       # with .expand, which means it expands by the specified size *in all directions*
       # (so the actual end size is "size * 2 + 1", theorically)
       to_cuboid:
-        required_data:
-          LOCATION: location
-          SIZE: integer
+        input_data:
+          LOCATION:
+            type: location
+          SIZE:
+            type: integer
         script:
           - determine <[DATA.LOCATION].to_cuboid[<[DATA.LOCATION]>].expand[<[DATA.SIZE].if_null[0]>]>
 
@@ -97,13 +129,19 @@ apademide:
     element:
       # Returns the input value cut at the specified length
       ellipsis:
-        required_data:
-          LENGTH: integer
-          STRING: any
+        input_data:
+          LENGTH:
+            type: integer
+          STRING:
+            type: any
         script:
           - if <[DATA.STRING].length> <= <[DATA.LENGTH]>:
             - determine <[DATA.STRING]>
           - determine <[DATA.STRING].substring[0,<[DATA.LENGTH].sub[1]>]><[DATA.CHAR].if_null[…]>
+      # Returns the input value as a "safe" element
+      # i.e, French word Île (Island) becomes ILE, Garçon (Boy) becomes GARCON, Saint-André becomes SAINT_ANDRE)
+      safe: do
+
 
     # # TASKS  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #          TASKS
 
@@ -131,44 +169,42 @@ apademide:
       chars:
         # Only Alphabetical glyphs
         alpha:
-          required_data:
-            AS: enum|LIST,ELEMENT
+          input_data:
+            AS:
+              type: enum
+              null: true
+              enum: LIST|ELEMENT
+            CASE:
+              type: enum
+              null: true
+              enum: UPPERCASE|LOWERCASE|ALL
           script:
-            - choose <[DATA.CASE].if_null[LOWERCASE]>_<[DATA.AS]>:
-              - case LOWERCASE_ELEMENT LOWER_ELEMENT:
-                - determine abcdefghijklmnopqrstuvwxyz
-              - case UPPERCASE_ELEMENT UPPER_ELEMENT:
-                - determine ABCDEFGHIJKLMNOPQRSTUVWXYZ
-              - case ALL_ELEMENT ANY_ELEMENT:
-                - determine abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
-              - case LOWERCASE_LIST LOWER_LIST:
-                - determine <list[a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z]>
-              - case UPPERCASE_LIST UPPER_LIST:
-                - determine <list[A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z]>
-              - case ALL_LIST ANY_LIST:
-                - determine <list[a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z]>
-              - default:
-                - determine abcdefghijklmnopqrstuvwxyz
+            - inject <script> path:subtasks.helpers.use_data
+            - define CASE <[DATA.CASE].if_null[LOWERCASE]>
+            - define AS <[DATA.AS].if_null[LIST]>
+            - determine <[PROC_DATA].parsed_key[CHARS.ALPHA.<[CASE]>.<[AS]>]>
         alphanum:
-          required_data:
-            AS: enum|LIST,ELEMENT
+          input_data:
+            AS:
+              type: enum
+              null: true
+              enum: LIST|ELEMENT
+            CASE:
+              type: enum
+              null: true
+              enum: UPPERCASE|LOWERCASE|ALL
           script:
-            - choose <[DATA.CASE].if_null[LOWERCASE]>_<[DATA.AS]>:
-              - case LOWERCASE_ELEMENT LOWER_ELEMENT:
-                - determine abcdefghijklmnopqrstuvwxyz0123456789
-              - case UPPERCASE_ELEMENT UPPER_ELEMENT:
-                - determine ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
-              - case ALL_ELEMENT ANY_ELEMENT:
-                - determine abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
-              - case LOWERCASE_LIST LOWER_LIST:
-                - determine <list[a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|0|1|2|3|4|5|6|7|8|9]>
-              - case UPPERCASE_LIST UPPER_LIST:
-                - determine <list[A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|0|1|2|3|4|5|6|7|8|9]>
-              - case ALL_LIST ANY_LIST:
-                - determine <list[a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|0|1|2|3|4|5|6|7|8|9]>
-              - default:
-                - determine abcdefghijklmnopqrstuvwxyz0123456789
-        # Only numbers
+            - inject <script> path:subtasks.helpers.use_data
+            - define CASE <[DATA.CASE].if_null[LOWERCASE]>
+            - define AS <[DATA.AS].if_null[LIST]>
+            - determine <[PROC_DATA].parsed_key[CHARS.ALPHANUM.<[CASE]>.<[AS]>]>
         num:
+          input_data:
+            AS:
+              type: enum
+              null: true
+              enum: LIST|ELEMENT
           script:
-            - determine 0123456789
+            - inject <script> path:subtasks.helpers.use_data
+            - define AS <[DATA.AS].if_null[LIST]>
+            - determine <[PROC_DATA].parsed_key[CHARS.NUM.<[AS]>]>

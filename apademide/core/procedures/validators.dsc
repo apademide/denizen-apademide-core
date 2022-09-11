@@ -5,25 +5,40 @@ apa_core_proc_input_validator:
   debug: false
   definitions: INPUT_DATA|VALIDATORS
   script:
-  # New definition where updated values will be stored
+  # Copy of the input data
+  # New values (possibly updated) will be stored in it, and is what gets determined
   - define NEW_DATA <[INPUT_DATA]>
-  - foreach <[VALIDATORS]> as:TYPE key:NAME:
 
-    # Grab the value in the input map, if it exists // Error if no
+  # Loops through all validators to check the value in the input map is valid
+  # Looping through *validators* means values in the input map that don't
+  # require getting checked (as in, the one who have no pair key in the validator map)
+  # won't be touched at all and returned as is
+  - foreach <[VALIDATORS]> as:TYPE_MAP key:NAME:
+
+    # Grab the value in the input map or NULL in inexistant
     - define VALUE <[INPUT_DATA].get[<[NAME]>].if_null[NULL]>
 
-    # If the data isn't set
+    # If the value isn't set…
     - if <[VALUE]> == NULL:
-      - definemap RESULT:
-          OK: false
-          CAUSE: NULL_VALUE
-          MISSING: <[NAME]>
-          REQUIRED_TYPE: <[TYPE]>
-          MESSAGE: Required key '<[NAME]>' isn't provided.
-      - determine <[RESULT]>
+      # … checks wether having no data is fine …
+      - define NULL_IS_FINE <[TYPE_MAP].get[NULL].if_null[false]>
+
+      # … if it's not okay error
+      - if !<[NULL_IS_FINE]>:
+        - definemap RESULT:
+            OK: false
+            CAUSE: NULL_VALUE
+            MISSING: <[NAME]>
+            REQUIRED_TYPE: <[TYPE_MAP.TYPE]>
+            MESSAGE: Required key '<[NAME]>' isn't provided.
+        - determine <[RESULT]>
+
+      # … if it didn't end already, by deduction it's fine and we don't go further
+      - foreach next
+
 
     # Validates the type of input
-    - choose <[TYPE].before[|]>:
+    - choose <[TYPE_MAP].get[TYPE]>:
 
       - case location:
         # If the input value as location is fine OR the value has a location (player, entity, …), it's fine. NULL otherwise
@@ -59,13 +74,35 @@ apa_core_proc_input_validator:
           - determine <[RESULT]>
 
       - case enum:
-        - define LIST <[TYPE].after[|].split[,]>
-        - if !<[LIST].contains[<[VALUE]>]>:
+        - define ENUM <[TYPE_MAP.ENUM].split[|]>
+        - if !<[ENUM].contains[<[VALUE]>]>:
           - definemap RESULT:
               OK: false
               CAUSE: NOT_IN_ENUM
-              VALID_OPTIONS: <[LIST].formatted>
+              VALID_OPTIONS: <[ENUM].formatted>
               GIVEN_OPTION: <[VALUE]>
-              MESSAGE: Possible values for '<[NAME]>' key: <[LIST].formatted>. (Input: <[VALUE].length.is_more_than[0].if_true[<proc[APADEMIDE].context[element.ellipsis|STRING=<[VALUE]>;LENGTH=50]>].if_false[<&lt>empty<&gt>]>)
+              MESSAGE: Possible values for '<[NAME]>' key: <[ENUM].formatted>. (Input: <[VALUE].length.is_more_than[0].if_true[<proc[APADEMIDE].context[element.ellipsis|STRING=<[VALUE]>;LENGTH=50]>].if_false[<&lt>empty<&gt>]>)
           - determine <[RESULT]>
+
+      # Handles Denizen's path sythax.
+      # Converts li@lists|of|elements to lists.of.elements
+      # Converts el@elements/with/slashes to elements.with.dots
+      # And transforms everything to uppercase (personnal preferences)
+      # Errors for anything else
+      - case path:
+        - choose <[VALUE].object_type>:
+          - case List:
+            - define NEW_DATA <[NEW_DATA].with[<[NAME]>].as[<[VALUE].separated_by[.].to_uppercase>]>
+          - case Element:
+            - define NEW_DATA <[NEW_DATA].with[<[NAME]>].as[<[VALUE].replace_text[/].with[.].to_uppercase>]>
+          - default:
+            - definemap RESULT:
+                OK: false
+                CAUSE: WRONG_TYPE
+                REQUIRED_TYPE: path
+                GIVEN_TYPE: <[VALUE].object_type>
+                MESSAGE: The '<[NAME]>' key should be a Denizen path. '<[VALUE].object_type>' given. (Input: <proc[APADEMIDE].context[element.ellipsis|STRING=<[VALUE]>;LENGTH=50]>)
+            - determine <[RESULT]>
+
+
   - determine <map[OK=true].with[DATA].as[<[NEW_DATA]>]>
