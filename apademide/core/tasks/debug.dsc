@@ -11,7 +11,6 @@ apa_core_debug:
   script:
   - inject <script> path:<[TYPE].if_null[DEFAULT]>
 
-
   # Script block that runs to output informations when APADEMIDE CORE is initialized
   innit:
   # Get internal data from the internal flag
@@ -30,10 +29,18 @@ apa_core_debug:
     - debug LOG "<script.parsed_key[data.warning_prefix]> No data has been found at server flag '<[ROOT]>'. If you're initializing APADEMIDE CORE for the first time or you intentionnaly editted/deleted that flag, ignore this message."
 
   no_apa:
-  - debug ERROR "You can't use '<[MESSAGE]>'. APADEMIDE CORE isn't enabled. Check console for possible errors?"
-
+  - debug ERROR "You can't use '<[MESSAGE]>'. APADEMIDE CORE isn't enabled. Check console for possible errors while enabling? (At server start or last reload)"
+  
   # Informs the user that APADEMIDE CORE failed to innit for some reason
   fatal:
   - debug ERROR "<script.parsed_key[data.error_prefix]> <[MESSAGE]> APADEMIDE CORE and MODULES are now disabled"
+
+  # Handles simple errors. No additionnal message, just formatted.
   error:
   - debug ERROR "<script.parsed_key[data.error_prefix]> <[MESSAGE]>"
+
+  modules:
+    fatal:
+    - debug ERROR "<script.parsed_key[data.error_prefix]> <[MESSAGE]> This MODULE is now disabled"
+    # bad_denizen_config:
+    # - debug ERROR "<script.parsed_key[data.error_prefix]> Module '<[MODULE]>' requires the Denizen config option '<[CONFIG_KEY]>' to be '<[REQUIRED_VALUE]>' (Currently set to '<[CURRENT_VALUE]>')"

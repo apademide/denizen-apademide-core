@@ -12,6 +12,8 @@ apa_core_config:
     console:
       # If true, no output will be sent to the console when APADEMIDE CORE is succesfully enabled.
       succeed_humbly: false
+      # If false, no data will be sent to the console when various APADEMIDE CORE features are used at all.
+      debug: true
 
     #- Configuration for players /commands
     commands:
