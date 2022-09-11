@@ -17,4 +17,4 @@ apa_module_webserver_world:
   debug: false
   events:
     on custom event id:APADEMIDE_CORE_RELOADED:
-    - announce moo 
+    - announce moo

@@ -6,6 +6,7 @@ apa_core_debug:
     error_prefix: APADEMIDE CORE ERROR<&co>
     ok_prefix: <green><bold>APA -<&gt><white>
     warning_prefix: <gold><bold>APA -<&gt><white>
+    log_prefix: <dark_gray>APA -<&gt><white>
 
   # Injects the specific type of output
   script:
@@ -38,6 +39,11 @@ apa_core_debug:
   # Handles simple errors. No additionnal message, just formatted.
   error:
   - debug ERROR "<script.parsed_key[data.error_prefix]> <[MESSAGE]>"
+
+  log:
+  - if <proc[APADEMIDE].context[DEBUG]>:
+    - debug LOG "<script.parsed_key[data.log_prefix]> <[MESSAGE]>"
+
 
   modules:
     fatal:

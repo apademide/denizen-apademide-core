@@ -1,7 +1,7 @@
 apa_core_internal_data:
   type: data
   debug: false
-  script:
+  scripts:
     #- ALL REQUIRED SCRIPTS
     # This map is used on load/reload to confirm every absolutely required script is there
     required:

@@ -29,7 +29,7 @@ apa_core_reload:
     - if <[CONFIG_SCRIPT].data_key[initialization.full_analysis].if_null[true]>:
       # Get various required data from the config
       - define REQUIRED_CONFIG_KEYS <[INTERNAL_CONFIG_SCRIPT].data_key[config.required].if_null[NULL]>
-      - define REQUIRED_SCRIPTS <[INTERNAL_CONFIG_SCRIPT].data_key[script.required].if_null[NULL]>
+      - define REQUIRED_SCRIPTS <[INTERNAL_CONFIG_SCRIPT].data_key[scripts.required].if_null[NULL]>
       # And errors if it's missing
       - if <[REQUIRED_CONFIG_KEYS]> == NULL || <[REQUIRED_SCRIPTS]> == NULL:
         - run apa_core_debug "context:FATAL|The internal config script seems to be incomplete. Please update the whole APADEMIDE CORE folder to be sure everything is as it should be."

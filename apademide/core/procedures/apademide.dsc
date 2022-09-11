@@ -3,17 +3,44 @@
 apademide:
   type: procedure
   debug: false
-  definitions: INPUT_PROC|INPUT_DATA
+  definitions: INPUT_A|INPUT_B
   script:
   # Stops if APADEMIDE CORE isn't enabled
   - if !<server.has_flag[_APA_CORE_FLAG.INNIT]>:
     - run apa_core_debug "context:NO_APA|APADEMIDE CORE's procedures"
     - determine NULL
 
-  # If no proc has been defined in the input, always errors
-  - if !<[INPUT_PROC].exists>:
-    - run apa_core_debug "context:ERROR|You must input a procedure name to use APADEMIDE CORE's procedures."
-    - determine NULL
+  
+  # If there's only one def set, it means the input data in that case is actually the proc without data input
+  - if !<[INPUT_B].exists>:
+    # If no input is set, always errors
+    - if !<[INPUT_A].exists>:
+      - run apa_core_debug "context:ERROR|You must input a procedure name to use APADEMIDE CORE's procedures."
+      - determine NULL
+    - define INPUT_PROC <[INPUT_A]>
+  # If INPUT_B exists, INPUT_A exists too
+  # In which case, we try to determine which one is which
+  - else:
+    # Tries to parse the first input as a map (which in most cases should be the actual data input with format <[THING].proc[APADEMIDE].context[<[PROC]>]>)
+    - define MAP <map[<[INPUT_A]>].if_null[NULL]>
+    # If it was null, …
+    - if <[MAP]> == NULL:
+      # Try again with second INPUT…
+      - define MAP <map[<[INPUT_B]>].if_null[NULL]>
+      # If still NULL, it means no input is a valid map which isn't normal if both defs were specified, so error
+      - if <[MAP]> == NULL:
+        - run apa_core_debug "context:ERROR|Couldn't determine which input was which in APADEMIDE CORE's procedure. (Input A: <[INPUT_A]>, Input B: <[INPUT_B]>)"
+        - determine NULL
+      # If map is valid, it means INPUT_B is the data and INPUT_A the proc
+      - define INPUT_DATA <[MAP]>
+      - define INPUT_PROC <[INPUT_A]>
+      - run apa_core_debug "context:LOG|Procedure determined INPUT A was the procedure (<[INPUT_A]>) and INPUT B was the data (<[INPUT_B]>)."
+    # else it means the map is valid, which means INPUT_A is the data and INPUT_B the proc
+    - else:
+      - define INPUT_DATA <[MAP]>
+      - define INPUT_PROC <[INPUT_B]>
+      - run apa_core_debug "context:LOG|Procedure determined INPUT B was the procedure (<[INPUT_B]>) and INPUT A was the data (<[INPUT_A]>)."
+
 
   # Checks the input proc name actually exists
   - define PROC <script.data_key[subprocedures.<[INPUT_PROC]>].if_null[NULL]>
@@ -29,15 +56,14 @@ apademide:
     - define DATA <map[<[DATA]>].if_null[<[DATA]>]>
 
   # If the proc has required data, validates it or errors
-  - define INPUT_DATA <[PROC].get[input_data].if_null[NULL]>
-  - if <[INPUT_DATA]> != NULL:
+  - define REQUIRED_DATA <[PROC].get[input_data].if_null[NULL]>
+  - if <[REQUIRED_DATA]> != NULL:
     # Validates all inputs thanks to the validator proc
-    - define RESULTS <proc[apa_core_proc_input_validator].context[<list_single[<[DATA]>].include_single[<[INPUT_DATA]>]>]>
+    - define RESULTS <proc[apa_core_proc_input_validator].context[<list_single[<[DATA]>].include_single[<[REQUIRED_DATA]>]>]>
     - if !<[RESULTS.OK].is_truthy>:
       - run apa_core_debug "context:ERROR|Error in procedure '<[INPUT_PROC]>': <[RESULTS.MESSAGE]>"
       - determine NULL
-    - define <[DATA]> <[RESULTS.DATA]>
-
+    - define DATA <[RESULTS.DATA]>
   - inject <script> path:subprocedures.<[INPUT_PROC]>.script
 
   # Quicks helpers to inject in the subprocs to achieve various goals or get various data
@@ -80,9 +106,10 @@ apademide:
       script:
         # Get this script's SUBPROCEDURES key (as in, the map of all procedures available)
         - define MAP <script.data_key[SUBPROCEDURES]>
+        - define PATH <[DATA.PATH].if_null[NULL]>
 
         # If there is no path input, returns all the root procs
-        - if !<[PATH].exists>:
+        - if <[PATH]> == NULL:
           - determine "Available APADEMIDE CORE procedures and procedure categories are: <[MAP].keys.formatted>."
 
         # If the path is set, get the procedure at its position or NULL
@@ -145,7 +172,12 @@ apademide:
       safe:
         input_data:
           CAPITALIZE:
-            type: boolean
+            type: bool
+            null: true
+            fallback: true
+          
+        script:
+          - determine <[DATA]>
 
 
     # # TASKS  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #          TASKS

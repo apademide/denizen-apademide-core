@@ -5,9 +5,12 @@ apa_core_proc_input_validator:
   debug: false
   definitions: INPUT_DATA|VALIDATORS
   script:
-  # Copy of the input data
+  # Copy of the input data or an empty map
   # New values (possibly updated) will be stored in it, and is what gets determined
-  - define NEW_DATA <[INPUT_DATA]>
+  - if <[INPUT_DATA]> == NULL:
+    - define NEW_DATA <map>
+  - else:
+    - define NEW_DATA <[INPUT_DATA]>
 
   # Loops through all validators to check the value in the input map is valid
   # Looping through *validators* means values in the input map that don't
@@ -23,7 +26,7 @@ apa_core_proc_input_validator:
       # … checks wether having no data is fine …
       - define NULL_IS_FINE <[TYPE_MAP].get[NULL].if_null[false]>
 
-      # … if it's not okay error
+      # … if it's not okay, error
       - if !<[NULL_IS_FINE]>:
         - definemap RESULT:
             OK: false
@@ -33,7 +36,13 @@ apa_core_proc_input_validator:
             MESSAGE: Required key '<[NAME]>' isn't provided.
         - determine <[RESULT]>
 
-      # … if it didn't end already, by deduction it's fine and we don't go further
+      # … if it didn't end already, by deduction it's fine…
+      # … so we check if there is a default fallback value…
+      - if <[TYPE_MAP.FALLBACK].exists>:
+
+        - define NEW_DATA <[NEW_DATA].with[<[NAME]>].as[<[TYPE_MAP.FALLBACK]>]>
+
+      # … and we don't go into further checks
       - foreach next
 
 
@@ -49,7 +58,7 @@ apa_core_proc_input_validator:
               CAUSE: WRONG_TYPE
               REQUIRED_TYPE: location
               GIVEN_TYPE: <[VALUE].object_type>
-              MESSAGE: The '<[NAME]>' key should be a location. '<[VALUE].object_type>' given. (Input: <proc[APADEMIDE].context[element.ellipsis|STRING=<[VALUE]>;LENGTH=50]>)
+              MESSAGE: The '<[NAME]>' key should be a location. '<[VALUE].object_type>' given. (Input: <map[STRING=<[VALUE]>;LENGTH=50].proc[APADEMIDE].context[element.ellipsis]>)
           - determine <[RESULT]>
         - define NEW_DATA <[NEW_DATA].with[<[NAME]>].as[<[PARSED_VALUE]>]>
 
@@ -60,7 +69,7 @@ apa_core_proc_input_validator:
               CAUSE: WRONG_TYPE
               REQUIRED_TYPE: integer
               GIVEN_TYPE: <[VALUE].object_type>
-              MESSAGE: The '<[NAME]>' key should be an integer. '<[VALUE].object_type>' given. (Input: <[VALUE].length.is_more_than[0].if_true[<proc[APADEMIDE].context[element.ellipsis|STRING=<[VALUE]>;LENGTH=50]>].if_false[<&lt>empty<&gt>]>)
+              MESSAGE: The '<[NAME]>' key should be an integer. '<[VALUE].object_type>' given. (Input: <[VALUE].length.is_more_than[0].if_true[<map[STRING=<[VALUE]>;LENGTH=50].proc[APADEMIDE].context[element.ellipsis]>].if_false[<&lt>empty<&gt>]>)
           - determine <[RESULT]>
 
       - case any:
@@ -70,7 +79,7 @@ apa_core_proc_input_validator:
               CAUSE: EMPTY_INPUT
               REQUIRED_TYPE: any
               GIVEN_TYPE: <[VALUE].object_type>
-              MESSAGE: The '<[NAME]>' key should be set to anything not empty. (Input: <[VALUE].length.is_more_than[0].if_true[<proc[APADEMIDE].context[element.ellipsis|STRING=<[VALUE]>;LENGTH=50]>].if_false[<&lt>empty<&gt>]>)
+              MESSAGE: The '<[NAME]>' key should be set to anything not empty. (Input: <[VALUE].length.is_more_than[0].if_true[<map[STRING=<[VALUE]>;LENGTH=50].proc[APADEMIDE].context[element.ellipsis]>].if_false[<&lt>empty<&gt>]>)
           - determine <[RESULT]>
 
       - case enum:
@@ -81,7 +90,7 @@ apa_core_proc_input_validator:
               CAUSE: NOT_IN_ENUM
               VALID_OPTIONS: <[ENUM].formatted>
               GIVEN_OPTION: <[VALUE]>
-              MESSAGE: Possible values for '<[NAME]>' key: <[ENUM].formatted>. (Input: <[VALUE].length.is_more_than[0].if_true[<proc[APADEMIDE].context[element.ellipsis|STRING=<[VALUE]>;LENGTH=50]>].if_false[<&lt>empty<&gt>]>)
+              MESSAGE: Possible values for '<[NAME]>' key: <[ENUM].formatted>. (Input: <[VALUE].length.is_more_than[0].if_true[<map[STRING=<[VALUE]>;LENGTH=50].proc[APADEMIDE].context[element.ellipsis]>].if_false[<&lt>empty<&gt>]>)
           - determine <[RESULT]>
 
       # Handles Denizen's path sythax.
@@ -101,8 +110,10 @@ apa_core_proc_input_validator:
                 CAUSE: WRONG_TYPE
                 REQUIRED_TYPE: path
                 GIVEN_TYPE: <[VALUE].object_type>
-                MESSAGE: The '<[NAME]>' key should be a Denizen path. '<[VALUE].object_type>' given. (Input: <proc[APADEMIDE].context[element.ellipsis|STRING=<[VALUE]>;LENGTH=50]>)
+                MESSAGE: The '<[NAME]>' key should be a Denizen path. '<[VALUE].object_type>' given. (Input: <map[STRING=<[VALUE]>;LENGTH=50].proc[APADEMIDE].context[element.ellipsis]>)
             - determine <[RESULT]>
 
-
+      # If the value is intended to be a boolean, force it into a boolean
+      - case bool boolean:
+        - define NEW_DATA <[NEW_DATA].with[<[NAME]>].as[<[VALUE].is_truthy>]>
   - determine <map[OK=true].with[DATA].as[<[NEW_DATA]>]>
