@@ -9,14 +9,17 @@ If you're reading this for the first time, please toggle that menu and read the 
 
   <summary><h2>Glossary</h2></summary>
   <div>
-    <div>This is the detailed content</div>
-    <br/>
+    <hr/>
+    <h3>APADEMIDE CORE</h3>
+    <p>As the name implies, this is the core of this system.
     <details>
       <summary>
-        Nested toggle! Some surprise inside...
+        More details…
       </summary>
       <div>
-        😲😲😲😲😲
+        Made up of multiples various scripts, APADEMIDE CORE provides many utilities and shortcuts that achieve tasks of all kinds.
+        Since Denizen is already very complete by itself, the main aim is to provide tools that fastens the scripting process.
+        To allow scripters to use the core 
       </div>
     </details>
   </div>
