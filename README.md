@@ -2,13 +2,12 @@
 
 > APADEMIDE CORE is a set of scripts that provide many useful features for Denizen Scripters.
 
-### Details element example
-
-
+In order to ensure this documention is clear for everyone to read, let's start with some definitions.
+If you're reading this for the first time, please toggle that menu and read the few words explained!
 
 <details>
 
-  <summary>Toggle me!</summary>
+  <summary><h2>Glossary</h2></summary>
   <div>
     <div>This is the detailed content</div>
     <br/>
@@ -78,13 +77,3 @@ term
 
 
 That is so funny! :joy:
-
-
-
-I need to highlight these ==very important words==.
-
-
-
-H~2~O
-
-X^2^
