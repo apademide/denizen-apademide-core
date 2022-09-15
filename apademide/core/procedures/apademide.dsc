@@ -140,7 +140,7 @@ apademide:
 
         # If we can get the script key inside the path, it means it's a procedure already
         - if <[MAP].get[script].exists>:
-          - determine "APADEMIDE CORE's procedure named '<[PATH]>' serves to: <[MAP].get[HELP].if_null[Unknown :( But it exists]>."
+          - determine "What APADEMIDE CORE's procedure named '<[PATH]>' does is: <[MAP].get[HELP].parsed.if_null[Unknown :( But it exists !]>"
         # … and if we can't get the script key, by deduction it's a "category" of procs
         - determine "APADEMIDE CORE's category of procedures '<[PATH]>' contains: <[MAP].keys.formatted>."
 
@@ -157,13 +157,16 @@ apademide:
       # with .expand, which means it expands by the specified size *in all directions*
       # (so the actual end size is "size * 2 + 1", theorically)
       to_cuboid:
+        help: Creates a cuboid of the given size centered at the given location.
         input_data:
           LOCATION:
             type: location
           SIZE:
             type: integer
+            null: true
+            fallback: 2
         script:
-          - determine <[DATA.LOCATION].to_cuboid[<[DATA.LOCATION]>].expand[<[DATA.SIZE].if_null[0]>]>
+          - determine <[DATA.LOCATION].to_cuboid[<[DATA.LOCATION]>].expand[<[DATA.SIZE]>]>
 
     # # ELEMENTS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #          ELEMENTS
 
@@ -172,18 +175,25 @@ apademide:
     element:
       # Returns the input value cut at the specified length
       ellipsis:
+        help: Shortens a string and adds an ellipsis if the string is too long.
         input_data:
           LENGTH:
             type: integer
           STRING:
             type: any
+          CHAR:
+            type: any
+            null: true
+            fallback: …
         script:
           - if <[DATA.STRING].length> <= <[DATA.LENGTH]>:
             - determine <[DATA.STRING]>
           - determine <[DATA.STRING].substring[0,<[DATA.LENGTH].sub[1]>]><[DATA.CHAR].if_null[…]>
       # Returns the input value as a "safe" element
       # i.e, French word Île (Island) becomes ILE, Garçon (Boy) becomes GARCON, Saint-André becomes SAINT_ANDRE)
+      # and "OI*+Uskjnj2j12owu1na a      a a sjha######ioduq≠}≠w (+yoijd" becomes OIUSKJNJ2J12OWU1NA_A_A_A_SJHAIODUQ_W_YOIJD
       safe:
+        help: Converts an element to a <&dq>safe<&dq> version of it without spaces, unicodes and separated by underscores. Useful to generate <&dq>safe IDs<&dq> or flag names for exemple.
         input_data:
           CAPITALIZE:
             type: bool
@@ -193,7 +203,7 @@ apademide:
             type: any
         script:
           # Get the map containing chars to replace
-          - define SAFE_MAP <map[PATH=CHARS.SAFE].proc[apademide].context[get_data]>
+          - define SAFE_MAP <map[PATH=CHARS.SAFE.EQUIVALENTS].proc[apademide].context[get_data]>
           # Put in a simpler def for convenience
           - define RESULT <[DATA.STRING]>
           # Replace all "complicated" chars by their basic equivalent
@@ -202,7 +212,7 @@ apademide:
             - foreach <[LIST]> as:NEEDLE:
               - define RESULT <[RESULT].replace_text[<[NEEDLE]>].with[<[REPLACEMENT]>]>
           # trim the result to remove remaining unwanted chars (unicodes, emojis, …)
-          - define RESULT <[RESULT].trim_to_character_set[_<proc[apademide].context[utils.chars.alphanum]>]>
+          - define RESULT <[RESULT].trim_to_character_set[<map[PATH=CHARS.SAFE.ELEMENT].proc[apademide].context[get_data]>]>
           # split _, filter empty values and convert back to element to remove duplicated underscores
           - define RESULT <[RESULT].split[_].filter_tag[<[FILTER_VALUE].length.is_more_than[0]>].separated_by[_]>
           # Return the result capitalized or not depending on the input
