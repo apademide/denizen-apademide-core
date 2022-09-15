@@ -3,9 +3,9 @@ apa_core_event_reload:
   debug: false
   events:
     # Triggers a full reload
-    after reload scripts:
+    on reload scripts:
     - define DATA <map[SOURCE=RELOAD_SCRIPT]>
     - customevent id:APADEMIDE_CORE_WANTS_RELOAD context:<[DATA]>
-    after server start:
+    on server start:
     - define DATA <map[SOURCE=SERVER_START]>
     - customevent id:APADEMIDE_CORE_WANTS_RELOAD context:<[DATA]>

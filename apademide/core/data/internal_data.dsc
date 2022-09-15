@@ -7,7 +7,7 @@ apa_core_internal_data:
     required:
       apademide: procedure
       apa_core_proc_input_validator: procedure
-      apa_core_procedures_data: data
+      apa_core_data: data
       apa_core_reload: world
       apa_core_task_register_module: task
       apa_core_debug: task

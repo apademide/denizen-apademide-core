@@ -10,7 +10,9 @@ apa_core_debug:
 
   # Injects the specific type of output
   script:
-  - inject <script> path:<[TYPE].if_null[DEFAULT]>
+  - if !<[MESSAGE].exists>:
+    - define MESSAGE "Something wrong happened."
+  - inject <script> path:<[TYPE].if_null[NULL]>
 
   # Script block that runs to output informations when APADEMIDE CORE is initialized
   innit:
@@ -31,7 +33,7 @@ apa_core_debug:
 
   no_apa:
   - debug ERROR "You can't use '<[MESSAGE]>'. APADEMIDE CORE isn't enabled. Check console for possible errors while enabling? (At server start or last reload)"
-  
+
   # Informs the user that APADEMIDE CORE failed to innit for some reason
   fatal:
   - debug ERROR "<script.parsed_key[data.error_prefix]> <[MESSAGE]> APADEMIDE CORE and MODULES are now disabled"
@@ -44,7 +46,8 @@ apa_core_debug:
   - if <proc[APADEMIDE].context[DEBUG]>:
     - debug LOG "<script.parsed_key[data.log_prefix]> <[MESSAGE]>"
 
-
+  NULL:
+  - debug LOG "<script.parsed_key[data.log_prefix]> <[MESSAGE]>"
   modules:
     fatal:
     - debug ERROR "<script.parsed_key[data.error_prefix]> <[MESSAGE]> This MODULE is now disabled"

@@ -70,7 +70,7 @@ apademide:
   subtasks:
     helpers:
       use_data:
-      - define PROC_DATA <script[apa_core_procedures_data]>
+      - define PROC_DATA <script[apa_core_data]>
 
 
   subprocedures:
@@ -93,6 +93,20 @@ apademide:
     permissions_root:
       script:
         - determine <proc[APADEMIDE].context[config].deep_get[commands.permissions.root]>
+
+    # Returns the given path in APADEMIDE CORE's data script
+    get_data:
+      input_data:
+        PATH:
+          type: path
+        PARSED:
+          type: bool
+          null: true
+          fallback: false
+      script:
+        - if <[DATA.PARSED]>:
+          - determine <script[apa_core_data].parsed_key[<[DATA.PATH]>].if_null[NULL]>
+        - determine <script[apa_core_data].data_key[<[DATA.PATH]>].if_null[NULL]>
 
     # As the name implies, it's a helper subprocedure.
     # You can use <proc[apademide].context[help]>
@@ -175,9 +189,26 @@ apademide:
             type: bool
             null: true
             fallback: true
-          
+          STRING:
+            type: any
         script:
-          - determine <[DATA]>
+          # Get the map containing chars to replace
+          - define SAFE_MAP <map[PATH=CHARS.SAFE].proc[apademide].context[get_data]>
+          # Put in a simpler def for convenience
+          - define RESULT <[DATA.STRING]>
+          # Replace all "complicated" chars by their basic equivalent
+          # éè -> e, $ -> s, …
+          - foreach <[SAFE_MAP]> as:LIST key:REPLACEMENT:
+            - foreach <[LIST]> as:NEEDLE:
+              - define RESULT <[RESULT].replace_text[<[NEEDLE]>].with[<[REPLACEMENT]>]>
+          # trim the result to remove remaining unwanted chars (unicodes, emojis, …)
+          - define RESULT <[RESULT].trim_to_character_set[_<proc[apademide].context[utils.chars.alphanum]>]>
+          # split _, filter empty values and convert back to element to remove duplicated underscores
+          - define RESULT <[RESULT].split[_].filter_tag[<[FILTER_VALUE].length.is_more_than[0]>].separated_by[_]>
+          # Return the result capitalized or not depending on the input
+          - if <[DATA.CAPITALIZE]>:
+            - determine <[RESULT].to_uppercase>
+          - determine <[RESULT]>
 
 
     # # TASKS  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #          TASKS
@@ -225,15 +256,17 @@ apademide:
             AS:
               type: enum
               null: true
+              fallback: ELEMENT
               enum: LIST|ELEMENT
             CASE:
               type: enum
               null: true
+              fallback: ALL
               enum: UPPERCASE|LOWERCASE|ALL
           script:
             - inject <script> path:subtasks.helpers.use_data
-            - define CASE <[DATA.CASE].if_null[LOWERCASE]>
-            - define AS <[DATA.AS].if_null[LIST]>
+            - define CASE <[DATA.CASE]>
+            - define AS <[DATA.AS]>
             - determine <[PROC_DATA].parsed_key[CHARS.ALPHANUM.<[CASE]>.<[AS]>]>
         num:
           input_data:
