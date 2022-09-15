@@ -78,8 +78,11 @@ apademide:
     # Returns APADEMIDE CORE's config map
     config:
       script:
-        # - inject <script> path:subtasks.helpers.requires_data
         - determine <server.flag[_APA_CORE_FLAG.CONFIG]>
+    # Returns APADEMIDE CORE's internal config script
+    internal_config:
+      script:
+        - determine <server.flag[_APA_CORE_FLAG.INTERNAL_CONFIG_SCRIPT]>
     # Returns APADEMIDE CORE's root flag name (determined in the config)
     root:
       script:
@@ -171,7 +174,7 @@ apademide:
     # # ELEMENTS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #          ELEMENTS
 
     #- SUB-SUBPROCEDURES related to elements
-    # A few utils to edit and manage elements (as strings)
+    # A few utils to edit and manage elements
     element:
       # Returns the input value cut at the specified length
       ellipsis:
@@ -188,7 +191,7 @@ apademide:
         script:
           - if <[DATA.STRING].length> <= <[DATA.LENGTH]>:
             - determine <[DATA.STRING]>
-          - determine <[DATA.STRING].substring[0,<[DATA.LENGTH].sub[1]>]><[DATA.CHAR].if_null[…]>
+          - determine <[DATA.STRING].substring[0,<[DATA.LENGTH].sub[1]>]><[DATA.CHAR]>
       # Returns the input value as a "safe" element
       # i.e, French word Île (Island) becomes ILE, Garçon (Boy) becomes GARCON, Saint-André becomes SAINT_ANDRE)
       # and "OI*+Uskjnj2j12owu1na a      a a sjha######ioduq≠}≠w (+yoijd" becomes OIUSKJNJ2J12OWU1NA_A_A_A_SJHAIODUQ_W_YOIJD
@@ -219,6 +222,15 @@ apademide:
           - if <[DATA.CAPITALIZE]>:
             - determine <[RESULT].to_uppercase>
           - determine <[RESULT]>
+      is_safe:
+        help: Returns a boolean whether the input string is already safe according to ELEMENT.SAFE's logic.
+        input_data:
+          STRING:
+            type: any
+        script:
+          - if <[DATA.STRING]> == <[DATA.STRING].trim_to_character_set[<map[PATH=CHARS.SAFE.ELEMENT].proc[apademide].context[get_data]>].split[_].filter_tag[<[FILTER_VALUE].length.is_more_than[0]>].separated_by[_]>:
+            - determine true
+          - determine false
 
 
     # # TASKS  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #          TASKS
@@ -228,15 +240,16 @@ apademide:
     task:
       debug:
         script:
-          - determine apa_core_debug
+          - determine <script[apa_core_debug]>
 
     # # MODULES # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           MODULES
 
     #- SUB-SUBPROCEDURES related to modules
     module:
       register:
+        help: Returns the script tag you may inject to register a new APADEMIDE MODULE.
         script:
-          - determine apa_core_task_register_module
+          - determine <script[apa_core_task_register_module]>
 
     # # UTILS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           UTILS
 

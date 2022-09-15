@@ -25,3 +25,15 @@ apa_core_internal_data:
           root: string
       initialization:
         store_denizen_config: bool
+  modules:
+    internal_config:
+      required:
+        #- ALL REQUIRED INTERNAL CONFIG OPTIONS FOR MODULES
+        author: id
+        namespace: id
+    config:
+      required:
+        #- ALL REQUIRED CONFIG OPTIONS FOR MODULES
+        commands:
+          permissions:
+            root: bool

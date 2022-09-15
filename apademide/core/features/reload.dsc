@@ -9,15 +9,21 @@ apa_core_reload:
     on custom event id:APADEMIDE_CORE_WANTS_RELOAD:
     - inject <script> path:RELOAD
   reload:
-    # Disable APADEMIDE CORE before proceeding to checks
-    # Resets all internal values
-    - flag server _APA_CORE_FLAG:!
-
-    # Get APADEMIDE CORE's user config script // Error and stop if null
+    # Get APADEMIDE CORE's user config script
     - define CONFIG_SCRIPT <script[apa_core_config].if_null[NULL]>
+
+    # If the source of the reload is /ex reload and the config tells not to "reload on reload", stop
+    - if <context.source.if_null[NULL]> == RELOAD_SCRIPTS && !<[CONFIG_SCRIPT].data_key[config.initialization.reload_on_reload].if_null[true]>:
+      - stop
+
+    # Error and stop if the config script is null
     - if <[CONFIG_SCRIPT]> == NULL:
       - run apa_core_debug "context:FATAL|Cannot innit APADEMIDE CORE without the config script installed."
       - stop
+
+    # Disable APADEMIDE CORE before proceeding to checks
+    # Resets all internal values
+    - flag server _APA_CORE_FLAG:!
 
     # Get APADEMIDE CORE's internal config script // Error and stop if null
     - define INTERNAL_CONFIG_SCRIPT <script[apa_core_internal_data].if_null[NULL]>
@@ -55,6 +61,7 @@ apa_core_reload:
     - flag server _APA_CORE_FLAG.ROOT:<[ROOT]>
     - flag server _APA_CORE_FLAG.INNIT:<util.time_now>
     - flag server _APA_CORE_FLAG.CONFIG:<[CONFIG_SCRIPT].data_key[config]>
+    - flag server _APA_CORE_FLAG.INTERNAL_CONFIG_SCRIPT:<[INTERNAL_CONFIG_SCRIPT]>
     - flag server _APA_CORE_FLAG.LAST_RELOAD_SOURCE:<context.source.if_null[UNKNOWN]>
 
     # If the config allows to store the config in a flag
@@ -64,6 +71,7 @@ apa_core_reload:
       - flag server _APA_CORE_FLAG.DENIZEN_CONFIG:<yaml[_APA_DENIZEN_CONFIG].read[]>
       - yaml unload id:_APA_DENIZEN_CONFIG
 
-    - customevent id:APADEMIDE_CORE_RELOADED
     # Outputs a confirmation
     - run <proc[APADEMIDE].context[TASK.DEBUG]> context:INNIT
+
+    - customevent id:APADEMIDE_CORE_RELOADED

@@ -23,12 +23,17 @@ apa_core_config:
 
     #- Configuration of various behaviors on load/reload
     initialization:
+      # Toggles the full reload of APADEMIDE CORE after a Denizen reload
+      # > It'll still be reloaded after a server restart or with the APADEMIDE CORE's reload command
+      # Defaults to true
+      reload_on_reload: true
+
       # Allows to store the Denizen config in APADEMIDE CORE's internal flag
-      # It is used by modules that require specific config options to work properly
+      # It is used by MODULES that require specific config options to work properly
       # i.e: The WebServer module (which may or may not exists as you read it) requires Commands.WebServer.Allow set to true to work
 
-      # If true, Denizen's config will be stored in the internal flag and modules will read that flag to confirm the it is correctly set for them to work
-      # If false, Denizen's config will not be read but affected modules will be disabled even if the config is supposed to allow them
+      # If true, Denizen's config will be stored in the internal flag and modules will read that flag to confirm the config is correctly set for them to work
+      # If false, Denizen's config will not be read, affected modules will be enabled by default and probably break
       store_denizen_config: true
 
       # Enables or disables full analysis on reload.
@@ -40,5 +45,7 @@ apa_core_config:
       # >   Without the full analysis, if you happen to have missing scripts or data somewhere, not only it's almost certain things will break, but you won't have any debug to help you figure out where.
 
       # You can still disable it if you know what you're doing and why you're doing it.
-      # If you do so, keep in mind that many tags have no fallback since to that analysis is supposed to confirm the values are fine
+      # If you do so, keep in mind that many tags have no fallback since that analysis is supposed to confirm the values are fine
       full_analysis: true
+      # Same as above, but for MODULES
+      full_module_analysis: true
