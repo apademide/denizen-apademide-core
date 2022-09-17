@@ -5,7 +5,7 @@ apa_core_debug:
   data:
     error_prefix: APADEMIDE CORE ERROR<&co>
     ok_prefix: <green><bold>APA -<&gt><white>
-    warning_prefix: <gold><bold>APA -<&gt><white>
+    warning_prefix: <red><bold>APA -<&gt><white>
     log_prefix: <dark_gray>APA -<&gt><white>
 
   # Injects the specific type of output
@@ -37,6 +37,9 @@ apa_core_debug:
   # Informs the user that APADEMIDE CORE failed to innit for some reason
   fatal:
   - debug ERROR "<script.parsed_key[data.error_prefix]> <[MESSAGE]> APADEMIDE CORE and MODULES are now disabled"
+
+  warning:
+  - debug LOG "<script.parsed_key[data.warning_prefix]> <[MESSAGE]>"
 
   # Handles simple errors. No additionnal message, just formatted.
   error:

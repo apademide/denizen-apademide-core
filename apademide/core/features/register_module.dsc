@@ -21,9 +21,14 @@ apa_core_task_register_module:
 
     # Loops through every required config key to confirm they exists // Error and stop if any misses
     - foreach <[REQUIRED_INTERNAL_CONFIG_KEYS].deep_keys> as:KEY:
+      - define SEVERITY <[REQUIRED_INTERNAL_CONFIG_KEYS].deep_get[<[KEY]>].if_null[warn]>
       - if !<[INTERNAL_CONFIG_SCRIPT].data_key[<[KEY]>].exists>:
-        - run apa_core_debug "context:MODULES.FATAL|The required *internal* config option '<[KEY].to_uppercase>' in '<[INTERNAL_CONFIG_SCRIPT].relative_filename>' is missing. If you are the author of this MODULE, please be sure everything is alright."
-        - stop
+        - choose <[SEVERITY]>:
+          - case fatal error:
+            - run apa_core_debug "context:MODULES.FATAL|The required *internal* config option '<[KEY].to_uppercase>' in '<[INTERNAL_CONFIG_SCRIPT].relative_filename>' is missing. If you are the author of this MODULE, please be sure everything is alright."
+            - stop
+          - case warn warning:
+            - run apa_core_debug "context:WARNING|The important *internal* config option '<[KEY].to_uppercase>' in '<[INTERNAL_CONFIG_SCRIPT].relative_filename>' is missing. If you are the author of this MODULE, please be sure everything is alright."
 
     # Get all the scripts required by the module, if any
     - define REQUIRED_SCRIPTS <[INTERNAL_CONFIG_SCRIPT].data_key[scripts.required].if_null[NULL]>
@@ -39,9 +44,16 @@ apa_core_task_register_module:
     - define GLOBAL_REQUIRED_CONFIG_KEYS <[GLOBAL_INTERNAL_CONFIG_SCRIPT].data_key[modules.config.required]>
     # Confirms all required config options are here, with the right type
     - foreach <[GLOBAL_REQUIRED_CONFIG_KEYS].deep_keys> as:KEY:
+      - define SEVERITY <[GLOBAL_REQUIRED_CONFIG_KEYS].deep_get[<[KEY]>].if_null[warn]>
       - if !<[CONFIG_SCRIPT].data_key[<[KEY]>].exists>:
-        - run apa_core_debug "context:MODULES.FATAL|The config option '<[KEY].to_uppercase>' in '<[CONFIG_SCRIPT].relative_filename>', which is required by the CORE, is missing."
-        - stop
+        - choose <[SEVERITY]>:
+          - case fatal error:
+            - run apa_core_debug "context:MODULES.FATAL|The config option '<[KEY].to_uppercase>' in '<[CONFIG_SCRIPT].relative_filename>', which is required by the CORE, is missing."
+            - stop
+          - case warn warning:
+            - run apa_core_debug "context:WARNING|The important config option '<[KEY].to_uppercase>' in '<[CONFIG_SCRIPT].relative_filename>', which is used by the CORE, is missing."
+
+
 
     # Config keys inside the MODULE's user's config, required by the MODULES's internal config (required if the MODULE contains any)
     - define REQUIRED_CONFIG_KEYS <[INTERNAL_CONFIG_SCRIPT].data_key[config.required]>

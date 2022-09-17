@@ -43,7 +43,7 @@ apa_module_essentialsnt_internal_data:
     required:
       commands:
         permissions:
-          root: bool
+          root: warn
   scripts:
     # ALL REQUIRED SCRIPTS
     # This map is used on load/reload to confirm every absolutely required script is there (if full_module_analysis config is set to true)

@@ -43,9 +43,15 @@ apa_core_reload:
 
       # Loops through every required config key to confirm they exists // Error and stop if any misses
       - foreach <[REQUIRED_CONFIG_KEYS].deep_keys> as:KEY:
+        - define SEVERITY <[REQUIRED_CONFIG_KEYS].deep_get[<[KEY]>].if_null[warn]>
         - if !<[CONFIG_SCRIPT].data_key[config.<[KEY]>].exists>:
-          - run apa_core_debug "context:FATAL|The required config option '<[KEY].to_uppercase>' in '<[CONFIG_SCRIPT].relative_filename>' is missing."
-          - stop
+          - choose <[SEVERITY]>:
+            - case fatal error:
+              - run apa_core_debug "context:FATAL|The required config option '<[KEY].to_uppercase>' in '<[CONFIG_SCRIPT].relative_filename>' is missing."
+              - stop
+            - case warn warning:
+              - run apa_core_debug delay:3t "context:WARNING|The important config option '<[KEY].to_uppercase>' in '<[CONFIG_SCRIPT].relative_filename>' is missing."
+
 
       # Confirms all required scripts are here, with the right type
       - foreach <[REQUIRED_SCRIPTS]> as:TYPE key:SCRIPT_NAME:

@@ -16,24 +16,24 @@ apa_core_internal_data:
       #- ALL REQUIRED CONFIG OPTIONS
       # This map is used to check wether all *required* config options are set in config.dsc
       console:
-        succeed_humbly: bool
-        debug: bool
+        succeed_humbly: warn
+        debug: warn
       flags:
-        root: string
+        root: fatal
       commands:
         permissions:
-          root: string
+          root: warn
       initialization:
-        store_denizen_config: bool
+        store_denizen_config: warn
   modules:
     internal_config:
       required:
         #- ALL REQUIRED INTERNAL CONFIG OPTIONS FOR MODULES
-        author: id
-        namespace: id
+        author: fatal
+        namespace: fatal
     config:
       required:
         #- ALL REQUIRED CONFIG OPTIONS FOR MODULES
         commands:
           permissions:
-            root: bool
+            root: warn
