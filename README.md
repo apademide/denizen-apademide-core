@@ -16,6 +16,6 @@ As soon as it's enabled, you can start using its features and add new modules.
 
 ## Documentation & support
 
-The documentation about how to use `APADEMIDE CORE` and what features it provides is available in this [repo's Wiki](https://github.com/apademide/denizen-apademide-core/wiki).
+The documentation about how to use `APADEMIDE CORE` and what features it provides is available in this [repo's Wiki](/wiki).
 
 To get more help and support, you can ask me (`apademide#8240`) in a thread in `#denizen` on the [Denizen discord](https://discord.gg/Q6pZGSR).
