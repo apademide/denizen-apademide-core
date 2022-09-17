@@ -11,7 +11,7 @@ If there's already terms you didn't understand at this point, it means that's mo
 In order to ensure this documention is clear for everyone to read, let's start with some definitions.   
 If you're reading this for the first time, please toggle that menu and read the few concepts explained!
 
-<details><summary><b>Glossary</b></summary>
+<details><summary><code>Glossary</code></summary>
 <p>
   
 ---
