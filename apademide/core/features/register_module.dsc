@@ -53,14 +53,15 @@ apa_core_task_register_module:
           - case warn warning:
             - run apa_core_debug "context:WARNING|The important config option '<[KEY].to_uppercase>' in '<[CONFIG_SCRIPT].relative_filename>', which is used by the CORE, is missing."
 
-
-
     # Config keys inside the MODULE's user's config, required by the MODULES's internal config (required if the MODULE contains any)
     - define REQUIRED_CONFIG_KEYS <[INTERNAL_CONFIG_SCRIPT].data_key[config.required]>
     - foreach <[REQUIRED_CONFIG_KEYS].deep_keys> as:KEY:
       - if !<[CONFIG_SCRIPT].data_key[<[KEY]>].exists>:
         - run apa_core_debug "context:MODULES.FATAL|The config option '<[KEY].to_uppercase>' in '<[CONFIG_SCRIPT].relative_filename>', which is required by the MODULE, is missing."
         - stop
+
+  - run <proc[APADEMIDE].context[TASK.DEBUG]> context:MODULES.INIT
+
   # - define GLOBAL_CONFIG <proc[APADEMIDE].context[config]>
   # - narrate <[GLOBAL_CONFIG]>
   # - narrate <script[apa_module_permissions_config].data_key[roles.moderator.permissions].deep_keys.parse[unescaped]>

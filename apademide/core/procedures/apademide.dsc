@@ -6,7 +6,7 @@ apademide:
   definitions: INPUT_A|INPUT_B
   script:
   # Stops if APADEMIDE CORE isn't enabled
-  - if !<server.has_flag[_APA_CORE_FLAG.INNIT]>:
+  - if !<server.has_flag[_APA_CORE_FLAG.INIT]>:
     - run apa_core_debug "context:NO_APA|APADEMIDE CORE's procedures"
     - determine NULL
 
@@ -45,9 +45,11 @@ apademide:
   # Checks the input proc name actually exists
   - define PROC <script.data_key[subprocedures.<[INPUT_PROC]>].if_null[NULL]>
   - if <[PROC]> == NULL:
-    - run apa_core_debug "context:ERROR|No procedure named '<[INPUT_PROC].if_null[NULL]>' exists in APADEMIDE CORE."
+    - run apa_core_debug "context:ERROR|No procedure named '<[INPUT_PROC]>' exists in APADEMIDE CORE."
     - determine NULL
-
+  - if !<[PROC].get[script].exists>:
+    - run apa_core_debug "context:ERROR|'<[INPUT_PROC]>' is a category of procedures, not a procedure."
+    - determine NULL
   # Determines the status of transfered data
   - define DATA <[INPUT_DATA].if_null[NULL]>
 
@@ -91,12 +93,10 @@ apademide:
     debug:
       script:
         - determine <server.flag[_APA_CORE_FLAG.CONFIG.CONSOLE.DEBUG]>
-
     # Returns APADEMIDE CORE's root permission for player commands
     permissions_root:
       script:
-        - determine <proc[APADEMIDE].context[config].deep_get[commands.permissions.root]>
-
+        - determine <server.flag[_APA_CORE_FLAG.CONFIG.COMMANDS.PERMISSIONS.ROOT]>
     # Returns the given path in APADEMIDE CORE's data script
     get_data:
       input_data:
@@ -250,6 +250,16 @@ apademide:
         help: Returns the script tag you may inject to register a new APADEMIDE MODULE.
         script:
           - determine <script[apa_core_task_register_module]>
+    # # MATHS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           MATHS
+    #- SUB-SUBPROCEDURES that provide math utils
+    math:
+      parse_formula:
+        input_data:
+          FORMULA:
+            type: any
+        script:
+          - determine <proc[apa_core_proc_parse_math].context[<[DATA.FORMULA]>]>
+
 
     # # UTILS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           UTILS
 

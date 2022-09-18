@@ -12,14 +12,22 @@ apa_core_config:
     console:
       # If true, no output will be sent to the console when APADEMIDE CORE is succesfully enabled.
       succeed_humbly: false
-      # If false, no data will be sent to the console when various APADEMIDE CORE features are used at all.
-      debug: true
+      # If false, no debug will be sent to the console when various APADEMIDE CORE features are used.
+      debug: false
     #- Configuration for players /commands
     commands:
       permissions:
         # Root permission
-        # Will be used for all commands as the base name
+        # Will be used for all commands as the base permission
+        # This permission is used by commands *handled by* APADEMIDE CORE
+        # i.e, the /money APADEMIDE COMMAND has the 'MONEY' permission by default
+        # > it means a player should actually have APADEMIDE.MONEY to run it
+        # It is the 'namespace' of all APADEMIDE COMMANDS
         root: APADEMIDE
+        # The permission to use the /apademide command,
+        # which should be an admin- or at least moderator-permission
+        # This permission could notably allow people to reload the CORE
+        core: APA_CORE
 
     #- Configuration of various behaviors on load/reload
     initialization:
