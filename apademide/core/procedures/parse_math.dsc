@@ -22,14 +22,35 @@ apa_core_proc_parse_math:
   type: procedure
   debug: false
   definitions: FORMULA
+  data:
+    operators:
+      - ^
+      - r
+      - /
+      - *
+      - -
+      - +
+      - '('
+      - ')'
   script:
     # Prepares the formula for parsing
-    - define FORMULA <[FORMULA].proc[apa_core_proc_prepare_formula]>
+    - define FORMULA <[FORMULA].proc[apa_core_proc_prepare_formula].as[LIST]>
+    # Get all operators (including parenthesis)
+    - define OPERATORS <script.data_key[DATA.OPERATORS]>
+
+    # Loop through every operator
+    - foreach <[OPERATORS]> as:OP:
+      #  Parses through each item
+      #- <[FORMULA].parse_tag[
+      #  split the list by the operator, the separate it by |<[OP]>| to reform a list with the operator inserted
+      #-   <[PARSE_VALUE].split[<[OP]>].separated_by[|<[OP]>|]>
+      #  and combine sublist to create a new flat list to reparse the next op
+      #- ].combine>
+      - define FORMULA <[FORMULA].parse_tag[<[PARSE_VALUE].split[<[OP]>].separated_by[|<[OP]>|]>].combine>
 
     - definemap RESULT:
         OK: true
         RESULT: <[FORMULA]>
-        # RESULT: <&nl><[MAP].to_yaml.replace_text[<&sq>].before_last[<&nl>]>
     - determine <[RESULT]>
 
 
