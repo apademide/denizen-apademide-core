@@ -283,7 +283,15 @@ apademide:
     # # MATHS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           MATHS
     #- SUB-SUBPROCEDURES that provide math utils
     math:
+      prepare_formula:
+        help: Takes an element input and converts it to a ready-to-use formula. (Mainly used by MATH.PARSE_FORMULA)
+        input_data:
+          FORMULA:
+            type: any
+        script:
+          - determine <proc[apa_core_proc_prepare_formula].context[<[DATA.FORMULA]>]>
       parse_formula:
+        help: Parses a complex math formula and returns its result.
         input_data:
           FORMULA:
             type: any
@@ -293,6 +301,17 @@ apademide:
             - determine <[RESULT.RESULT]>
           - run apa_core_debug context:ERROR|<[RESULT.MESSAGE]>
           - determine NULL
+      calculate:
+        help: Calculates single-level math operations (1+1, 3*5-3, 2^4/5, no parenthesis).
+        input_data:
+          FORMULA:
+            type: any
+          CHECKED:
+            type: bool
+            null: true
+            fallback: false
+        script:
+          - determine <[DATA.FORMULA].proc[apa_core_proc_calculate].context[<[DATA.CHECKED]>]>
 
 
     # # UTILS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           UTILS
