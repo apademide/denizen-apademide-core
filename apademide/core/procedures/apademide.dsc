@@ -231,7 +231,37 @@ apademide:
           - if <[DATA.STRING]> == <[DATA.STRING].trim_to_character_set[<map[PATH=CHARS.SAFE.ELEMENT].proc[apademide].context[get_data]>].split[_].filter_tag[<[FILTER_VALUE].length.is_more_than[0]>].separated_by[_]>:
             - determine true
           - determine false
-
+      trim_to_character_set:
+        help: An advanced version of Denizen's same named tag, handling all chars instead of ASCII only.
+        input_data:
+          STRING:
+            type: any
+          SET:
+            type: any
+        script:
+        - if <[DATA.SET].object_type> != LIST:
+          - define DATA.SET <[DATA.SET].to_list>
+        - define RESULT <empty>
+        - foreach <[DATA.STRING].to_list> as:EL:
+          - if <[EL]> in <[DATA.SET]>:
+            - define RESULT <[RESULT]><[EL]>
+        - determine <[RESULT]>
+      matches_character_set:
+        help: An advanced version of Denizen's same named tag, handling all chars instead of ASCII only.
+        input_data:
+          STRING:
+            type: any
+          SET:
+            type: any
+        script:
+        - if <[DATA.SET].object_type> != LIST:
+          - define DATA.SET <[DATA.SET].to_list>
+        # - define PARSED <[DATA.STRING].to_list.parse_tag[<[DATA.SET].contains[<[PARSE_VALUE]>]>]>
+        # - determine <[PARSED].contains[false].not>
+        - foreach <[DATA.STRING].to_list> as:EL:
+          - if <[EL]> !in <[DATA.SET]>:
+            - determine false
+        - determine true
 
     # # TASKS  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #          TASKS
 
@@ -258,7 +288,11 @@ apademide:
           FORMULA:
             type: any
         script:
-          - determine <proc[apa_core_proc_parse_math].context[<[DATA.FORMULA]>]>
+          - define RESULT <proc[apa_core_proc_parse_math].context[<[DATA.FORMULA]>]>
+          - if <[RESULT.OK]>:
+            - determine <[RESULT.RESULT]>
+          - run apa_core_debug context:ERROR|<[RESULT.MESSAGE]>
+          - determine NULL
 
 
     # # UTILS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           UTILS

@@ -4,12 +4,26 @@ apa_core_proc_parse_math:
   debug: false
   definitions: FORMULA
   script:
-  # Automatically converts ([{}]) to parenthesis
+  # Converts ([{}]) to parenthesis
   - define FORMULA <[FORMULA].replace_text[<&lb>].with[(].replace_text[<&rb>].with[)].replace_text[<&lc>].with[(].replace_text[<&rc>].with[)]>
-  # Automatically converts comma to dots
-  - define FORMULA <[FORMULA].replace_text[,].with[.]>
+  # Converts comma to dots and remove spaces
+  - define FORMULA '<[FORMULA].replace_text[,].with[.].replace_text[ ]>'
+  # Converts all types of dashes to the normal one (minus sign)
+  - define FORMULA <[FORMULA].replace_text[–].with[-].replace_text[—].with[-]>
+  # Converts all possible multiplicators to * (equations aren't supported so x is *)
+  - define FORMULA <[FORMULA].replace_text[·].with[*].replace_text[x].with[*].replace_text[×].with[*]>
+  # Converts various notations of roots to r
+  - define FORMULA <[FORMULA].replace_text[sqrt].with[r].replace_text[_].with[r]>
+  # Trim potential equal signs before or after to handle (just in case) (equation)=
+  - define FORMULA <[FORMULA].after[=].before_last[=]>
+  # Confirms the formula contains only handled chars at this point
+  - if <map[STRING=<[FORMULA]>;SET=0123456789⁰¹²³⁴⁵⁶⁷⁸⁹+-/*^r()].proc[APADEMIDE].context[CHARS.MATCHES_CHARACTER_SET]>:
+    - definemap RESULT:
+        OK: false
+        MESSAGE: Your equation contains unhandled characters. (MATH.PARSE_FORMULA)
+    - determine <[RESULT]>
   # Convert each element to a list entry
-  - define ELEMENTS '<[FORMULA].to_list.filter[equals[ ].not]>'
+  - define ELEMENTS <[FORMULA].to_list>
 
   # the current "depth" of the formula
   # 1+1 will be 1,
@@ -33,54 +47,59 @@ apa_core_proc_parse_math:
   # Loop through the split formula
   - foreach <[ELEMENTS]> as:EL:
 
+    # If we open a parenthesis, go deeper
+    # and next
     - if <[EL].equals[(]>:
-      - if <[PATH].get[<[NEST]>].exists>:
-        - debug LOG "<gold>PATHgetNEST <[PATH].get[<[NEST]>]> NEST <[NEST]> PATH <[PATH]>"
-        - define PATH[<[NEST]>]:++
-        - debug LOG "<gold>PATHgetNEST <[PATH].get[<[NEST]>]> NEST <[NEST]> PATH <[PATH]>"
-      - else:
-        - debug LOG "<aqua>NEST <[NEST]> PATH <[PATH]>"
-        - define PATH:->:0
       - define NEST:++
+      - define PATH:->:0
       - foreach next
+    # If we close a parenthsis, come back shallower
+    # and next
     - if <[EL].equals[)]>:
-      # - define PATH[<[NEST]>]:<-
       - define NEST:--
-      - define PATH <[PATH].remove[last]>
+      # Error if the parenthesis are unmatched pairs
+      - if <[NEST]> == 0:
+        - definemap RESULT:
+            OK: false
+            MESSAGE: Unmatched parenthesis. (MATH.PARSE_FORMULA)
+        - determine <[RESULT]>
+      - define PATH[last]:<-
       - foreach next
 
-    - debug LOG "<red><[PATH].separated_by[.].null_if[length.equals[0]].if_null[N]> (<[NEST]>)"
+    # Reform numbers
+    # > If the current value is either a dot, a minus sign or an integer,
+    # > we want to check wether the previous one was too
+    # > in order to recompose decimals and integers > 9
+    - define EL_IS_DOT <[EL].equals[.]>
+    - define EL_IS_MIN <[EL].equals[-]>
+    - if <[EL].is_integer> || <[EL_IS_DOT]>:
+      # Get the previous value (aka the current PATH since it wasn't increased yet)
+      # A fallback is necessary for when we are in the first element of a submap
+      # to handle PATH ending by .0 (which error)
+      - define OLD <[MAP].deep_get[<[PATH].separated_by[.]>].if_null[NULL]>
+      # We check wether the old value was a decimal
+      # Formats like ##. returns true with is_decimal (even without a number after the dot),
+      # automatically handlings the recomposition of decimals too
+      - if <[OLD].is_decimal>:
+        # in that case combine both values (to reform the whole number)
+        - define MAP <[MAP].deep_with[<[PATH].separated_by[.]>].as[<[OLD]><[EL]>]>
+        - foreach next
+      # If the previous value wasn't a decimal and the current one is a dot,
+      # it means we face a .## decimal.
+      # We add the 0 before so Denizen can handle it
+      - else if <[EL_IS_DOT]>:
+        - define MAP <[MAP].deep_with[<[PATH].separated_by[.]>].as[0<[EL]>]>
+        - foreach next
+    # Increase the current value in the path
+    - define PATH[<[NEST]>]:++
 
-    # - debug LOG "<element[  ].repeat[<[NEST].sub[1]>]><dark_gray>↓ P: <[PATH].separated_by[.]> | N: <[NEST]>"
-    - debug LOG "<element[  ].repeat[<[NEST].sub[1]>]><[EL]>"
-
-    # - if <[EL].equals[(]>:
-    #   - define NEST:++
-    #   - if !<[PATH].get[<[NEST]>].exists>:
-    #   #   - define PATH[<[NEST]>]:++
-    #   # - else:
-    #     - define PATH <[PATH].include[1]>
-    #   - foreach next
-
-    # - if <[EL].equals[)]>:
-    #   - define NEST:--
-    #   - define PATH <[PATH].remove[last]>
-    #   # Error if parenthesis are unmatched
-    #   - if <[NEST]> < 0:
-    #     - determine "<map[OK=FALSE;MESSAGE=Unmatched parenthesis]>"
-    #   - foreach next
-
-    # - define PATH[<[NEST]>]:++
-    # - define PATH <[PATH].overwrite[<[PATH].get[<[NEST]>]>].at[<[NEST]>]>
-    # - debug LOG "<&color[#dddddd]><[PATH].separated_by[.].if_null[<[PATH]>]> (<[NEST]>)<&co>"
+    # Add the current value to the map
+    - define MAP <[MAP].deep_with[<[PATH].separated_by[.]>].as[<[EL]>]>
 
   - definemap RESULT:
       OK: true
-      RESULT: uwu
-  # - determine <map[OK=TRUE;RESULT=<[RESULT]>]>
-  - determine <[RESULT.RESULT]>
-
-
+      RESULT: <&nl><[MAP].to_yaml.replace_text[<&sq>].before_last[<&nl>]>
+  - determine <[RESULT]>
 
 
 
