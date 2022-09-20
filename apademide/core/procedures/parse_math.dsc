@@ -21,7 +21,7 @@ apa_core_proc_math_formula_prepare:
     # - define FORMULA <[FORMULA].replace_text[pi].with[|<util.pi>|].replace_text[π].with[|<util.pi>|]>
 
     # Inline version of all the above define commands
-    - define FORMULA '<[FORMULA].replace_text[<&lb>].with[(].replace_text[<&rb>].with[)].replace_text[<&lc>].with[(].replace_text[<&rc>].with[)].replace_text[,].with[.].replace_text[ ].replace_text[–].with[-].replace_text[—].with[-].replace_text[·].with[*].replace_text[x].with[*].replace_text[×].with[*].replace_text[÷].with[/].replace_text[sqrt].with[r].replace_text[_].with[r].replace_text[^].with[p].replace_text[pi].with[|<util.pi>|].replace_text[π].with[|<util.pi>|]>'
+    - define FORMULA '<[FORMULA].replace_text[<&lb>].with[(].replace_text[<&rb>].with[)].replace_text[<&lc>].with[(].replace_text[<&rc>].with[)].replace_text[,].with[.].replace_text[ ].replace_text[–].with[-].replace_text[—].with[-].replace_text[·].with[*].replace_text[x].with[*].replace_text[×].with[*].replace_text[÷].with[/].replace_text[sqrt].with[r].replace_text[^].with[p].replace_text[pi].with[|<util.pi>|].replace_text[π].with[|<util.pi>|]>'
 
     - definemap RESULT:
         OK: true
@@ -36,6 +36,9 @@ apa_core_proc_math_formula_split:
   definitions: INPUT
   data:
     operators:
+      - sin
+      - tan
+      - cos
       - p
       - r
       - /
@@ -74,6 +77,9 @@ apa_core_proc_math_formula_to_postfix:
   definitions: INPUT
   data:
     precedence:
+      'sin': 4
+      'tan': 4
+      'cos': 4
       'p': 4
       'r': 4
       '*': 3
@@ -89,10 +95,11 @@ apa_core_proc_math_formula_to_postfix:
       - determine <[RESULT]>
     - define FORMULA <[MAP.RESULT]>
 
-    # All operators EXCEPT parenthesis
-    - define OPERATORS <list[p|r|/|*|-|+]>
     # Precedence map
     - define PRECEDENCE <script.data_key[DATA.PRECEDENCE]>
+    # All operators EXCEPT parenthesis
+    - define OPERATORS <[PRECEDENCE].keys>
+
 
     - define QUEUE <list>
     - define STACK <list>
@@ -108,7 +115,6 @@ apa_core_proc_math_formula_to_postfix:
       - if <[OPERATORS].contains[<[EL]>]>:
         # If the last element in the STACK is an operator, we check for its precedence
         - define LAST <[STACK].last.if_null[NULL]>
-        - debug log '<green>Index: <[LOOP_INDEX]> <&d>EL: <[EL]> <white> | <&d>EL Pré: <[PRECEDENCE.<[EL]>]>  <white> | <&d>LAST: <[LAST]> <white> | <&d>LAST Pré: <[PRECEDENCE.<[LAST]>].if_null[NULL]> <white> | <&d> <[OPERATORS].contains[<[LAST]>]>'
         - if <[OPERATORS].contains[<[LAST]>]> && <[PRECEDENCE.<[LAST]>]> >= <[PRECEDENCE.<[EL]>]>:
           # If the new item has a lower precedence than the previous item,
           # We move the previous operator from the STACK to the QUEUE
@@ -116,7 +122,6 @@ apa_core_proc_math_formula_to_postfix:
           - define STACK[last]:<-
         # And we append the new operator to the STACK
         - define STACK:->:<[EL]>
-        - debug log <blue><[STACK]>
         - foreach next
 
       # Openning parenthesis
@@ -176,7 +181,7 @@ apa_core_proc_math_formula_calculate:
     # All operators excepts single-input-operators that's handled differently
     - define OPERATORS <list[p|/|*|-|+]>
     # All single-input-operators
-    - define S_OPERATORS <list[]>
+    - define S_OPERATORS <list[sin|tan|cos|r]>
     # The STACK of elements to be parsed and already parsed
     - define STACK <list>
 
@@ -189,10 +194,19 @@ apa_core_proc_math_formula_calculate:
       # Handle single-input-operators
       # Square roots, sin, tan, …
       # They only need to mess with the following value
-      - if <[EL]> == r:
+      - if <[S_OPERATORS].contains[<[EL]>]>:
         - define AFTER <[STACK].last>
         - define STACK[last]:<-
-        - define STACK:->:<[AFTER].sqrt>
+        - choose <[EL]>:
+          - case tan:
+            - define NEW_EL <[AFTER].tan>
+          - case cos:
+            - define NEW_EL <[AFTER].cos>
+          - case sin:
+            - define NEW_EL <[AFTER].sin>
+          - case r:
+            - define NEW_EL <[AFTER].sqrt>
+        - define STACK:->:<[NEW_EL]>
         - foreach next
       - if <[OPERATORS].contains[<[EL]>]>:
         - define AFTER <[STACK].last.if_null[NULL]>
