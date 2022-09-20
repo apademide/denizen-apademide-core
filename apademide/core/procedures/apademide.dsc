@@ -256,13 +256,16 @@ apademide:
         script:
         - if <[DATA.SET].object_type> != LIST:
           - define DATA.SET <[DATA.SET].to_list>
-        # - define PARSED <[DATA.STRING].to_list.parse_tag[<[DATA.SET].contains[<[PARSE_VALUE]>]>]>
-        # - determine <[PARSED].contains[false].not>
-        - foreach <[DATA.STRING].to_list> as:EL:
-          - if <[EL]> !in <[DATA.SET]>:
-            - determine false
-        - determine true
-
+        ## After some testing, this method seems to be slighty more efficient that the foreach loop
+        # Aprox 1700-1800ms VS 1800-1950ms
+        - define PARSED <[DATA.STRING].to_list.parse_tag[<[DATA.SET].contains[<[PARSE_VALUE]>]>]>
+        - determine <[PARSED].contains[false].not>
+        # - foreach <[DATA.STRING].to_list> as:EL:
+        #   - if <[EL]> !in <[DATA.SET]>:
+        #     - determine false
+        # - determine true
+        # Test tag:
+        # <util.list_numbers_to[4500].parse_tag[<map[STRING=ABCDEFGHIJKLMNOPQRSTUVWXYZ+*ç%&/()=?`±“#Ç[];SET=ABCDEFGHIJKLMNOPQRSTUVWXYZ].proc[apademide].context[element.matches_character_set]>]>
     # # TASKS  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #          TASKS
 
     #- SUB-SUBPROCEDURES related to tasks
@@ -284,34 +287,41 @@ apademide:
     #- SUB-SUBPROCEDURES that provide math utils
     math:
       prepare_formula:
-        help: Takes an element input and converts it to a ready-to-use formula. (Mainly used by MATH.PARSE_FORMULA)
+        help: Takes an element input and converts it to a ready-to-use formula. (Mainly used by MATH.SPLIT_FORMULA for MATH.CALC)
         input_data:
           FORMULA:
             type: any
         script:
-          - determine <proc[apa_core_proc_prepare_formula].context[<[DATA.FORMULA]>]>
-      parse_formula:
+          - determine <proc[apa_core_proc_math_formula_prepare].context[<[DATA.FORMULA]>]>
+      split_formula:
+        help: Takes a prepared formula input and converts it to a list where each element is a formula's element. (Mainly used by MATH.CALC)
+        input_data:
+          FORMULA:
+            type: any
+        script:
+          - determine <proc[apa_core_proc_math_formula_split].context[<[DATA.FORMULA]>]>
+      calc:
         help: Parses a complex math formula and returns its result.
         input_data:
           FORMULA:
             type: any
         script:
-          - define RESULT <proc[apa_core_proc_parse_math].context[<[DATA.FORMULA]>]>
+          - define RESULT <proc[apa_core_proc_math_formula_calculate].context[<[DATA.FORMULA]>]>
           - if <[RESULT.OK]>:
             - determine <[RESULT.RESULT]>
           - run apa_core_debug context:ERROR|<[RESULT.MESSAGE]>
           - determine NULL
-      calculate:
-        help: Calculates single-level math operations (1+1, 3*5-3, 2^4/5, no parenthesis).
-        input_data:
-          FORMULA:
-            type: any
-          CHECKED:
-            type: bool
-            null: true
-            fallback: false
-        script:
-          - determine <[DATA.FORMULA].proc[apa_core_proc_calculate].context[<[DATA.CHECKED]>]>
+      # calculate:
+      #   help: Calculates single-level math operations (1+1, 3*5-3, 2^4/5, no parenthesis).
+      #   input_data:
+      #     FORMULA:
+      #       type: any
+      #     CHECKED:
+      #       type: bool
+      #       null: true
+      #       fallback: false
+      #   script:
+      #     - determine <[DATA.FORMULA].proc[apa_core_proc_calculate].context[<[DATA.CHECKED]>]>
 
 
     # # UTILS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           UTILS
