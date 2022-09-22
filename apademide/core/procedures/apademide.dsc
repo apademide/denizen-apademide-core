@@ -311,18 +311,6 @@ apademide:
             - determine <[RESULT.RESULT]>
           - run apa_core_debug context:ERROR|<[RESULT.MESSAGE]>
           - determine NULL
-      # calculate:
-      #   help: Calculates single-level math operations (1+1, 3*5-3, 2^4/5, no parenthesis).
-      #   input_data:
-      #     FORMULA:
-      #       type: any
-      #     CHECKED:
-      #       type: bool
-      #       null: true
-      #       fallback: false
-      #   script:
-      #     - determine <[DATA.FORMULA].proc[apa_core_proc_calculate].context[<[DATA.CHECKED]>]>
-
 
     # # UTILS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           UTILS
 
