@@ -10,7 +10,6 @@ apademide:
     - run apa_core_debug "context:NO_APA|APADEMIDE CORE's procedures"
     - determine NULL
 
-  
   # If there's only one def set, it means the input data in that case is actually the proc without data input
   - if !<[INPUT_B].exists>:
     # If no input is set, always errors
@@ -69,10 +68,12 @@ apademide:
   - inject <script> path:subprocedures.<[INPUT_PROC]>.script
 
   # Quicks helpers to inject in the subprocs to achieve various goals or get various data
-  subtasks:
-    helpers:
-      use_data:
-      - define PROC_DATA <script[apa_core_data]>
+  inject:
+    use_data:
+    - define PROC_DATA <script[apa_core_data]>
+    easy_defs:
+    - foreach <[DATA].keys.if_null[<list[]>]> as:KEY:
+      - define <[KEY]> <[DATA.<[KEY]>]>
 
 
   subprocedures:
@@ -110,7 +111,6 @@ apademide:
         - if <[DATA.PARSED]>:
           - determine <script[apa_core_data].parsed_key[<[DATA.PATH]>].if_null[NULL]>
         - determine <script[apa_core_data].data_key[<[DATA.PATH]>].if_null[NULL]>
-
     # As the name implies, it's a helper subprocedure.
     # You can use <proc[apademide].context[help]>
     # with or without additionnal context (consisting of PATH:A.FULL.OR.PARTIAL.PATH.TO.A.SUBPROC)
@@ -302,6 +302,7 @@ apademide:
           - determine <proc[apa_core_proc_math_formula_split].context[<[DATA.FORMULA]>]>
       calc:
         help: Parses a complex math formula and returns its result.
+        aliases: parse_math|calulate
         input_data:
           FORMULA:
             type: any
@@ -331,7 +332,7 @@ apademide:
               null: true
               enum: UPPERCASE|LOWERCASE|ALL
           script:
-            - inject <script> path:subtasks.helpers.use_data
+            - inject <script> path:inject.use_data
             - define CASE <[DATA.CASE].if_null[LOWERCASE]>
             - define AS <[DATA.AS].if_null[LIST]>
             - determine <[PROC_DATA].parsed_key[CHARS.ALPHA.<[CASE]>.<[AS]>]>
@@ -348,7 +349,7 @@ apademide:
               fallback: ALL
               enum: UPPERCASE|LOWERCASE|ALL
           script:
-            - inject <script> path:subtasks.helpers.use_data
+            - inject <script> path:inject.use_data
             - define CASE <[DATA.CASE]>
             - define AS <[DATA.AS]>
             - determine <[PROC_DATA].parsed_key[CHARS.ALPHANUM.<[CASE]>.<[AS]>]>
@@ -359,6 +360,21 @@ apademide:
               null: true
               enum: LIST|ELEMENT
           script:
-            - inject <script> path:subtasks.helpers.use_data
+            - inject <script> path:inject.use_data
             - define AS <[DATA.AS].if_null[LIST]>
             - determine <[PROC_DATA].parsed_key[CHARS.NUM.<[AS]>]>
+
+    # # PLAYERS # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #           PLAYERS
+
+    #- SUB-SUBPROCEDURES that provide utils for players
+    player:
+      hotbar:
+        content:
+          help: Gets the list of items in the input player's hotbar.
+          input_data:
+            PLAYER:
+              type: player
+              null: true
+              fallback: <player>
+          script:
+            - determine <[DATA.PLAYER].inventory.slot[1|2|3|4|5|6|7|8|9]>

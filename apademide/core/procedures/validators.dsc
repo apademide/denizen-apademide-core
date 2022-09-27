@@ -24,10 +24,10 @@ apa_core_proc_input_validator:
     # If the value isn't set…
     - if <[VALUE]> == NULL:
       # … checks wether having no data is fine …
-      - define NULL_IS_FINE <[TYPE_MAP].get[NULL].if_null[false]>
+      - define NULL_IS_FINE <[TYPE_MAP].get[NULL].if_null[NULL]>
 
       # … if it's not okay, error
-      - if !<[NULL_IS_FINE]>:
+      - if <[NULL_IS_FINE]> == NULL:
         - definemap RESULT:
             OK: false
             CAUSE: NULL_VALUE
@@ -44,7 +44,6 @@ apa_core_proc_input_validator:
 
       # … and we don't go into further checks
       - foreach next
-
 
     # Validates the type of input
     - choose <[TYPE_MAP].get[TYPE]>:
